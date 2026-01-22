@@ -18,18 +18,26 @@ ObservaStock is a microservices-based application that showcases distributed tra
 - ✅ **Custom Metrics**: Counter and Histogram for trading operations
 - ✅ **Automatic Instrumentation**: ASP.NET Core, HttpClient, and Entity Framework Core
 - ✅ **Runtime Metrics**: .NET runtime and process metrics
-- ✅ **OTLP Export**: All telemetry exported via OpenTelemetry Protocol
+- ✅ **OTLP Export**: All telemetry exported via OpenTelemetry Protocol to single collector
+- ✅ **Trace-Correlated Logging**: Logs exported to OTLP with TraceId correlation
+- ✅ **Request Size Monitoring**: Middleware to track HTTP payload sizes
+- ✅ **Health Checks with Metrics**: Service health monitoring with status exported as metrics
 
 ### Custom Instrumentation
 - **TradingMetrics Meter**: 
   - `total_trades_placed` (Counter): Tracks all trades with symbol and action labels
   - `trade_value_usd` (Histogram): Records trade values for percentile analysis
+- **Request Size Histogram**:
+  - `http_request_payload_size_bytes` (Histogram): Monitors 'Heavy' requests
+- **Health Status Gauge**:
+  - `health_status` (Gauge): Service health status (1=Healthy, 0=Unhealthy, -1=Degraded)
 
 ### Observability Stack
 - **Jaeger**: Visualize distributed traces
 - **Prometheus**: Store and query metrics
-- **Grafana**: Create dashboards and alerts
+- **Grafana**: Create dashboards and alerts (includes pre-built dashboard)
 - **OpenTelemetry Collector**: Collect, process, and export telemetry
+- **Health Checks UI**: Real-time service health monitoring
 
 ## Architecture
 
@@ -105,10 +113,30 @@ curl -X POST http://localhost:5000/api/trades \
   }'
 ```
 
-### 6. View Observability Data
-- **Jaeger UI**: http://localhost:16686 (traces)
+### 6. Check Service Health
+```bash
+# Check PriceService health
+curl http://localhost:5001/health
+
+# Check TradingApi health (includes dependency checks)
+curl http://localhost:5000/health
+
+# View Health UI in browser
+open http://localhost:5000/health-ui
+```
+
+### 7. View Observability Data
+- **Jaeger UI**: http://localhost:16686 (traces with correlated logs)
 - **Prometheus**: http://localhost:9090 (metrics)
 - **Grafana**: http://localhost:3000 (dashboards - admin/admin)
+  - Import the dashboard from `grafana/dashboard.json`
+
+### 8. Explore the Enhancements
+See [OPENTELEMETRY_ENHANCEMENTS.md](OPENTELEMETRY_ENHANCEMENTS.md) for detailed documentation on:
+- Request payload size monitoring
+- Health checks with metrics export
+- Trace-correlated logging
+- Pre-built Grafana dashboard
 
 ## Project Structure
 
