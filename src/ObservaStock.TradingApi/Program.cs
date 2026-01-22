@@ -29,9 +29,12 @@ builder.Services.AddHttpClient("PriceService", client =>
 });
 
 // Add Health Checks
+var priceServiceBaseUrl = builder.Configuration["PriceService:BaseUrl"] ?? "http://localhost:5001";
+var priceServiceHealthUrl = new Uri(new Uri(priceServiceBaseUrl), "/health");
+
 builder.Services.AddHealthChecks()
     .AddUrlGroup(
-        new Uri(builder.Configuration["PriceService:BaseUrl"] ?? "http://localhost:5001" + "/health"),
+        priceServiceHealthUrl,
         name: "PriceService",
         tags: new[] { "services", "priceservice" })
     .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(), tags: new[] { "services", "tradingapi" });
