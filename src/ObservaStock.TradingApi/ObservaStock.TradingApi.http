@@ -1,0 +1,6 @@
+@ObservaStock.TradingApi_HostAddress = http://localhost:5063
+
+GET {{ObservaStock.TradingApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
