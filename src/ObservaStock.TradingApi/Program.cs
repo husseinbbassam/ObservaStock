@@ -3,11 +3,12 @@ using ObservaStock.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add OpenTelemetry
+// Add OpenTelemetry with custom meter
 builder.Services.AddObservaStockOpenTelemetry(
     serviceName: "ObservaStock.TradingApi",
     serviceVersion: "1.0.0",
-    otlpEndpoint: builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317"
+    otlpEndpoint: builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317",
+    additionalMeterNames: "TradingMetrics"
 );
 
 // Add custom meter for Trading Metrics

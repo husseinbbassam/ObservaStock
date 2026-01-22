@@ -1,6 +1,31 @@
-@ObservaStock.TradingApi_HostAddress = http://localhost:5063
+@ObservaStock.TradingApi_HostAddress = http://localhost:5000
 
-GET {{ObservaStock.TradingApi_HostAddress}}/weatherforecast/
+### Health Check
+GET {{ObservaStock.TradingApi_HostAddress}}/api/trades/health
 Accept: application/json
+
+###
+
+### Place a Buy Trade
+POST {{ObservaStock.TradingApi_HostAddress}}/api/trades
+Content-Type: application/json
+
+{
+  "symbol": "AAPL",
+  "action": "Buy",
+  "quantity": 10
+}
+
+###
+
+### Place a Sell Trade
+POST {{ObservaStock.TradingApi_HostAddress}}/api/trades
+Content-Type: application/json
+
+{
+  "symbol": "MSFT",
+  "action": "Sell",
+  "quantity": 5
+}
 
 ###

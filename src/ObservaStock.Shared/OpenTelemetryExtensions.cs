@@ -27,12 +27,14 @@ public static class OpenTelemetryExtensions
     /// <param name="serviceName">The name of the service.</param>
     /// <param name="serviceVersion">The version of the service.</param>
     /// <param name="otlpEndpoint">The OTLP endpoint URL (default: http://localhost:4317).</param>
+    /// <param name="additionalMeterNames">Additional meter names to include in metrics collection.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddObservaStockOpenTelemetry(
         this IServiceCollection services,
         string serviceName,
         string serviceVersion = "1.0.0",
-        string otlpEndpoint = "http://localhost:4317")
+        string otlpEndpoint = "http://localhost:4317",
+        params string[] additionalMeterNames)
     {
         // Create resource attributes for the service
         var resourceBuilder = ResourceBuilder
@@ -99,12 +101,19 @@ public static class OpenTelemetryExtensions
                     .AddProcessInstrumentation()
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddMeter(serviceName)
-                    .AddOtlpExporter(otlpOptions =>
-                    {
-                        otlpOptions.Endpoint = new Uri(otlpEndpoint);
-                        otlpOptions.Protocol = OtlpExportProtocol.Grpc;
-                    });
+                    .AddMeter(serviceName);
+                
+                // Add any additional meters
+                foreach (var meterName in additionalMeterNames)
+                {
+                    meterProviderBuilder.AddMeter(meterName);
+                }
+                
+                meterProviderBuilder.AddOtlpExporter(otlpOptions =>
+                {
+                    otlpOptions.Endpoint = new Uri(otlpEndpoint);
+                    otlpOptions.Protocol = OtlpExportProtocol.Grpc;
+                });
             });
 
         // Configure logging to include OpenTelemetry
