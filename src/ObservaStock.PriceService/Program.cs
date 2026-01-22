@@ -1,4 +1,6 @@
 using ObservaStock.Shared;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,10 @@ builder.Services.AddObservaStockOpenTelemetry(
     serviceVersion: "1.0.0",
     otlpEndpoint: builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317"
 );
+
+// Add Health Checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(), tags: new[] { "services", "priceservice" });
 
 // Add HTTP context accessor for request tracing
 builder.Services.AddHttpContextAccessor();
@@ -41,7 +47,10 @@ app.MapGet("/api/prices/{symbol}", async (string symbol, ILogger<Program> logger
 })
 .WithName("GetStockPrice");
 
-app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Service = "PriceService" }))
-    .WithName("Health");
+// Health check endpoint
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.Run();

@@ -1,0 +1,352 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "observastock-main",
+    "title": "ObservaStock Monitoring Dashboard",
+    "tags": ["observastock", "opentelemetry", "trading"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Trade Volume (Counter)",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(observastock_total_trades_placed_total[1m]))",
+            "legendFormat": "Trades per second",
+            "refId": "A"
+          },
+          {
+            "expr": "sum by (symbol) (rate(observastock_total_trades_placed_total[1m]))",
+            "legendFormat": "{{symbol}}",
+            "refId": "B"
+          }
+        ],
+        "options": {
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          },
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": ["lastNotNull", "mean"]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10,
+              "showPoints": "never"
+            }
+          }
+        },
+        "description": "Total number of trades placed per second, aggregated and broken down by stock symbol"
+      },
+      {
+        "id": 2,
+        "title": "P99 Latency of PriceService (Histogram)",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 8,
+          "y": 0,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(observastock_http_server_request_duration_bucket{service_name=\"ObservaStock.PriceService\"}[5m])) by (le))",
+            "legendFormat": "P99 Latency",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(observastock_http_server_request_duration_bucket{service_name=\"ObservaStock.PriceService\"}[5m])) by (le))",
+            "legendFormat": "P95 Latency",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(observastock_http_server_request_duration_bucket{service_name=\"ObservaStock.PriceService\"}[5m])) by (le))",
+            "legendFormat": "P50 Latency (Median)",
+            "refId": "C"
+          }
+        ],
+        "options": {
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          },
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": ["lastNotNull", "mean", "max"]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10,
+              "showPoints": "never"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "P99 Latency"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "red"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "description": "P99, P95, and P50 latency percentiles for PriceService HTTP requests"
+      },
+      {
+        "id": 3,
+        "title": "System CPU & Memory Usage",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 16,
+          "y": 0,
+          "w": 8,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(observastock_process_cpu_time_seconds_total[1m]) * 100",
+            "legendFormat": "CPU Usage % - {{service_name}}",
+            "refId": "A"
+          },
+          {
+            "expr": "observastock_process_memory_usage_bytes / 1024 / 1024",
+            "legendFormat": "Memory MB - {{service_name}}",
+            "refId": "B"
+          }
+        ],
+        "options": {
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          },
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": ["lastNotNull", "mean", "max"]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10,
+              "showPoints": "never"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": "CPU.*"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "percent"
+                },
+                {
+                  "id": "custom.axisPlacement",
+                  "value": "left"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": "Memory.*"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "decmbytes"
+                },
+                {
+                  "id": "custom.axisPlacement",
+                  "value": "right"
+                }
+              ]
+            }
+          ]
+        },
+        "description": "System CPU and memory usage for all ObservaStock services"
+      },
+      {
+        "id": 4,
+        "title": "Request Payload Size (Histogram)",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 0,
+          "y": 8,
+          "w": 12,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(observastock_http_request_payload_size_bytes_bucket[5m])) by (le))",
+            "legendFormat": "P99 Request Size",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(observastock_http_request_payload_size_bytes_bucket[5m])) by (le))",
+            "legendFormat": "P95 Request Size",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(observastock_http_request_payload_size_bytes_bucket[5m])) by (le))",
+            "legendFormat": "P50 Request Size (Median)",
+            "refId": "C"
+          }
+        ],
+        "options": {
+          "tooltip": {
+            "mode": "multi"
+          },
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": ["lastNotNull", "mean", "max"]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decbytes",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            }
+          }
+        },
+        "description": "Distribution of HTTP request payload sizes to monitor 'Heavy' requests"
+      },
+      {
+        "id": 5,
+        "title": "Health Check Status",
+        "type": "timeseries",
+        "gridPos": {
+          "x": 12,
+          "y": 8,
+          "w": 12,
+          "h": 8
+        },
+        "targets": [
+          {
+            "expr": "observastock_health_status",
+            "legendFormat": "{{check_name}} - {{status}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "tooltip": {
+            "mode": "multi"
+          },
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": ["lastNotNull"]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "mappings": [
+              {
+                "type": "value",
+                "options": {
+                  "1": {
+                    "text": "Healthy",
+                    "color": "green"
+                  },
+                  "0": {
+                    "text": "Unhealthy",
+                    "color": "red"
+                  },
+                  "-1": {
+                    "text": "Degraded",
+                    "color": "yellow"
+                  }
+                }
+              }
+            ],
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "red"
+                },
+                {
+                  "value": 1,
+                  "color": "green"
+                }
+              ]
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "stepAfter",
+              "fillOpacity": 50
+            }
+          }
+        },
+        "description": "Health check status for all services (1=Healthy, 0=Unhealthy, -1=Degraded)"
+      }
+    ],
+    "time": {
+      "from": "now-15m",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"]
+    },
+    "annotations": {
+      "list": []
+    }
+  }
+}

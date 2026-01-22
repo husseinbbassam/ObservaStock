@@ -116,7 +116,7 @@ public static class OpenTelemetryExtensions
                 });
             });
 
-        // Configure logging to include OpenTelemetry
+        // Configure logging to include OpenTelemetry with OTLP export
         services.AddLogging(loggingBuilder =>
         {
             loggingBuilder.AddOpenTelemetry(options =>
@@ -125,6 +125,13 @@ public static class OpenTelemetryExtensions
                 options.IncludeFormattedMessage = true;
                 options.IncludeScopes = true;
                 options.ParseStateValues = true;
+                
+                // Add OTLP exporter for logs to enable correlation with traces
+                options.AddOtlpExporter(otlpOptions =>
+                {
+                    otlpOptions.Endpoint = new Uri(otlpEndpoint);
+                    otlpOptions.Protocol = OtlpExportProtocol.Grpc;
+                });
             });
         });
 

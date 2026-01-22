@@ -1,5 +1,7 @@
 using System.Diagnostics.Metrics;
 using ObservaStock.Shared;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,9 +28,42 @@ builder.Services.AddHttpClient("PriceService", client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
+// Add Health Checks
+var priceServiceBaseUrl = builder.Configuration["PriceService:BaseUrl"] ?? "http://localhost:5001";
+var priceServiceHealthUrl = new Uri(new Uri(priceServiceBaseUrl), "/health");
+
+builder.Services.AddHealthChecks()
+    .AddUrlGroup(
+        priceServiceHealthUrl,
+        name: "PriceService",
+        tags: new[] { "services", "priceservice" })
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(), tags: new[] { "services", "tradingapi" });
+
+// Add Health Checks UI
+builder.Services.AddHealthChecksUI(settings =>
+{
+    settings.SetEvaluationTimeInSeconds(10); // Evaluate every 10 seconds
+    settings.MaximumHistoryEntriesPerEndpoint(50);
+    settings.AddHealthCheckEndpoint("TradingApi", "/health");
+})
+.AddInMemoryStorage();
+
+// Register health check metrics publisher
+builder.Services.AddSingleton<Microsoft.Extensions.Diagnostics.HealthChecks.IHealthCheckPublisher, HealthCheckMetricsPublisher>();
+
+// Publish health check results as metrics
+builder.Services.Configure<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckPublisherOptions>(options =>
+{
+    options.Delay = TimeSpan.FromSeconds(5);
+    options.Period = TimeSpan.FromSeconds(10);
+});
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Add request size recording middleware
+app.UseRequestSizeRecording();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -89,8 +124,16 @@ app.MapPost("/api/trades", async (TradeRequest request, IHttpClientFactory httpC
 })
 .WithName("PlaceTrade");
 
-app.MapGet("/api/trades/health", () => Results.Ok(new { Status = "Healthy", Service = "TradingApi" }))
-    .WithName("Health");
+// Health check endpoints
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapHealthChecksUI(options =>
+{
+    options.UIPath = "/health-ui";
+});
 
 app.Run();
 
